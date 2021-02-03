@@ -1,4 +1,4 @@
-package bc
+package main
 
 import (
     "encoding/hex"

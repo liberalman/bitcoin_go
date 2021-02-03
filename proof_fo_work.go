@@ -2,7 +2,7 @@
 // @Description 工作量证明算法实现
 // @Author shouchao.zheng 2021-01-23
 // @Update shouchao.zheng 2021-01-23
-package bc
+package main
 
 import (
     "bytes"
