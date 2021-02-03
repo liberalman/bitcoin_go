@@ -7,7 +7,6 @@ package main
 import (
     "bytes"
     "crypto/sha256"
-    "encoding/binary"
     "fmt"
     "math"
     "math/big"
@@ -43,6 +42,7 @@ func (this *ProofOfWork) prepareData(nonce int) []byte {
         IntToHex(int64(targetBits)),
         IntToHex(int64(nonce)),
     }, []byte{})
+
     return data
 }
 
@@ -82,17 +82,6 @@ func (this *ProofOfWork) Validate() bool {
     hashInt.SetBytes(hash[:])
 
     return hashInt.Cmp(this.target) == -1
-}
-
-// 将一个 int64 转化为一个字节数组(byte array)
-func IntToHex(num int64) []byte {
-    buff := new(bytes.Buffer)
-    err := binary.Write(buff, binary.BigEndian, num)
-    if err != nil {
-        panic(err)
-    }
-
-    return buff.Bytes()
 }
 
 func TestPow() {

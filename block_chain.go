@@ -2,9 +2,11 @@ package main
 
 import (
     "bytes"
+    "crypto/ecdsa"
     "encoding/hex"
     "errors"
     "github.com/boltdb/bolt"
+    "log"
 )
 
 const dbFile = "blockchain.db" // "blockchain_%s.db"
@@ -92,7 +94,7 @@ func (this *BlockChain) FindSpendableOutputs(address string, amount int) (int, m
     var (
         accumulated    = 0 // 累加货币值
         unSpentOutputs = make(map[string][]int)
-        unSpentTXs     = this.FindUnSpentTranscation(address)
+        unSpentTXs     = this.FindUnSpentTransaction(address)
     )
 
 Work:
@@ -115,7 +117,7 @@ Work:
 }
 
 // 找到包含未花费输出的交易
-func (this *BlockChain) FindUnSpentTranscation(address string) []Transaction {
+func (this *BlockChain) FindUnSpentTransaction(address string) []Transaction {
     var (
         unSpentTXs []Transaction
         spentTXOs  = make(map[string][]int)
@@ -323,3 +325,17 @@ func (this *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
     return Transaction{}, errors.New("Transaction is not found")
 }
 
+// SignTransaction signs inputs of a Transaction
+func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+    prevTXs := make(map[string]Transaction)
+
+    for _, vin := range tx.Vin {
+        prevTX, err := bc.FindTransaction(vin.Txid)
+        if err != nil {
+            log.Panic(err)
+        }
+        prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
+    }
+
+    tx.Sign(privKey, prevTXs)
+}
