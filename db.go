@@ -58,4 +58,34 @@ func (i *BlockChainIterator) Next() *Block {
 	i.currentHash = block.Hash
 
 	return block
+}package bc
+
+import (
+    "bytes"
+    "encoding/gob"
+)
+
+// 序列化
+func (this *Block) Serialize() []byte {
+    var result bytes.Buffer
+    encoder := gob.NewEncoder(&result)
+
+    if err := encoder.Encode(this); nil != err {
+        panic(err)
+    }
+
+    return result.Bytes()
+}
+
+// 反序列化
+func DeSerialize(data []byte) *Block {
+    var block Block
+
+    decoder := gob.NewDecoder(bytes.NewReader(data))
+
+    if err := decoder.Decode(&block); nil != err {
+        panic(err)
+    }
+
+    return &block
 }
