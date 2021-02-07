@@ -25,21 +25,23 @@ func (this *CLI) Run() {
 	nodeID := os.Getenv("NODE_ID")
 	if nodeID == "" {
 		fmt.Printf("NODE_ID env. var is not set!")
-		//os.Exit(1)
-		nodeID = "1234"
+		os.Exit(1)
 	}
 
+	//getBalanceCmd := flag.NewFlagSet("get_balance", flag.ExitOnError)
+	//createBlockChainCmd := flag.NewFlagSet("create_block_chain", flag.ExitOnError)
 	addBlockCmd := flag.NewFlagSet("add_block", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("print_chain", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	createBlockChainCmd := flag.NewFlagSet("create_block_chain", flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("create_wallet", flag.ExitOnError)
 
+	//getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
 	addBlockData := addBlockCmd.String("data", "", "Block data")
 	sendFrom := sendCmd.String("from", "", "Source wallet address")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
-	//sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
+	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 	createBlockChainAddress := createBlockChainCmd.String("address", "",
 		"The address to send genesis block reward to")
 
@@ -89,8 +91,7 @@ func (this *CLI) Run() {
 			os.Exit(1)
 		}
 
-		//this.send(*sendFrom, *sendTo, *sendAmount, nodeID, *sendMine)
-		this.send(*sendFrom, *sendTo, *sendAmount)
+		this.send(*sendFrom, *sendTo, *sendAmount, nodeID, *sendMine)
 	}
 
 	if createBlockChainCmd.Parsed() {
@@ -98,7 +99,7 @@ func (this *CLI) Run() {
 			createBlockChainCmd.Usage()
 			os.Exit(1)
 		}
-		//this.createBlockChain(*createBlockChainAddress, nodeID)
+		this.createBlockChain(*createBlockChainAddress, nodeID)
 	}
 
 	if createWalletCmd.Parsed() {
@@ -149,12 +150,36 @@ func (this *CLI) printChain() {
 	}
 }
 
-func (this *CLI) send(from, to string, amount int) {
-	blockChain := CreateBlockChain(from)
+func (this *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
+	if !ValidateAddress(from) {
+		panic("ERROR: Sender address is not valid")
+	}
+	if !ValidateAddress(to) {
+		panic("ERROR: Recipient address is not valid")
+	}
+
+	blockChain := CreateBlockChain(from, nodeID)
+	set := UTXOSet{blockChain}
 	defer blockChain.db.Close()
 
-	tx := NewUTXOTransaction(from, to, amount, blockChain)
-	blockChain.MineBlock([]*Transaction{tx})
+	wallets, err := NewWallets(nodeID)
+	if nil != err {
+		panic(err)
+	}
+	wallet := wallets.GetWallet(from)
+
+	tx := NewUTXOTransaction(&wallet, to, amount, &set)
+
+	if mineNow {
+		cbTX := CreateCoinBaseTX(from, "")
+		txs := []*Transaction{cbTX, tx}
+
+		newBlock := blockChain.MineBlock(txs)
+		set.Update(newBlock)
+	} else {
+		sendTx(knownNodes[0], tx)
+	}
+
 	fmt.Println("Success!")
 }
 
@@ -164,4 +189,18 @@ func (this *CLI) createWallet(nodeID string) {
 	wallets.SaveToFile(nodeID)
 
 	fmt.Printf("Your new address: %s\n", address)
+}
+
+func (this *CLI) createBlockChain(address, nodeID string) {
+	if !ValidateAddress(address) {
+		panic("ERROR: Address is not valid")
+	}
+
+	blockChain := CreateBlockChain(address, nodeID)
+	defer blockChain.db.Close()
+
+	set := UTXOSet{blockChain}
+	set.ReIndex()
+
+	fmt.Println("Done!")
 }

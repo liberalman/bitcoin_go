@@ -1,7 +1,7 @@
 package main
 
 func main() {
-    blockChain := CreateBlockChain("")
+    //blockChain := CreateBlockChain("1DAhvHAataamMB7yg2hyFLeA7LE8LAuo88", "1234")
 
     /*bc.AddBlock("Send 1 BTC to Andy")
       bc.AddBlock("Send 2 mort BTC to Andy")
@@ -15,9 +15,10 @@ func main() {
           fmt.Println()
       }*/
 
-    defer blockChain.db.Close()
+    //defer blockChain.db.Close()
 
-    cli := CLI{blockChain}
+    //cli := CLI{blockChain}
+    cli := CLI{}
     cli.Run()
 }
 

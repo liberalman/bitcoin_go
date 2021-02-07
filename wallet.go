@@ -139,3 +139,18 @@ func (this Wallets) SaveToFile(nodeID string) {
         panic(err)
     }
 }
+
+// check if address is valid
+func ValidateAddress(address string) bool {
+    return true
+    //pubKeyHash := Base58Decode([]byte(address))
+    //actualCheckSum := pubKeyHash[len(pubKeyHash) - addressChecksumLen : ]
+    //version := pubKeyHash[0]
+    //pubKeyHash =
+}
+
+// return a Wallet by its address
+func (this Wallets) GetWallet(address string) Wallet {
+    return *this.Wallets[address]
+}
+
