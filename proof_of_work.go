@@ -84,15 +84,3 @@ func (this *ProofOfWork) Validate() bool {
     return hashInt.Cmp(this.target) == -1
 }
 
-func TestPow() {
-    var nonce int = 13240266 // 假设计数器的当前值是 13240266
-    var nonceStr string = fmt.Sprintf("%x", nonce) // 转换为对应的16进制值 "ca07ca"
-    data1 := []byte("I like donuts")
-    data2 := []byte("I like donuts" + nonceStr) // 追加计数器当前值
-    targetBits := 24 // 要求前24位为0（二进制值）
-    target := big.NewInt(1)
-    target.Lsh(target, uint(256-targetBits)) // 左移(256-targetBits)位
-    fmt.Printf("%x\n", sha256.Sum256(data1))
-    fmt.Printf("%64x\n", target)
-    fmt.Printf("%x\n", sha256.Sum256(data2))
-}
