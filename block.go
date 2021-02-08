@@ -1,4 +1,4 @@
-package main
+package bitcoin_go
 
 import (
     "bytes"

@@ -1,6 +1,7 @@
 package test
 
 import (
+    . "bitcoin_go"
     "encoding/hex"
     "strings"
     "testing"

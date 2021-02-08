@@ -1,20 +1,21 @@
-package main
+package bitcoin_go
 
 import (
     "bytes"
     "crypto/ecdsa"
     "encoding/hex"
     "errors"
+    "fmt"
     "github.com/boltdb/bolt"
     "log"
+    "os"
 )
 
-const dbFile = "blockchain.db" // "blockchain_%s.db"
+const dbFile = "blockchain_%s.db"
 const blocksBucket = "blocks"
 const genesisCoinBaseData = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
 type BlockChain struct {
-    //blocks []*Block
     tip []byte
     db  *bolt.DB
 }
@@ -56,9 +57,18 @@ func (this *BlockChain) AddBlock(data string) {
     }
 }
 
-// 创建区块链，即有创世块的链
-func CreateBlockChain(address string) *BlockChain {
+// creates a new blockchain DB
+func CreateBlockChain(address, nodeID string) *BlockChain {
+    dbFile := fmt.Sprintf(dbFile, nodeID)
+    if dbExists(dbFile) {
+        fmt.Println("BlockChain already exists.")
+        os.Exit(1)
+    }
+
     var tip []byte
+    cbtx := CreateCoinBaseTX(address, genesisCoinBaseData)
+    genesis := CreateGenesisBlock(cbtx)
+
     db, err := bolt.Open(dbFile, 0600, nil)
     if nil != err {
         panic(err)
@@ -68,14 +78,19 @@ func CreateBlockChain(address string) *BlockChain {
         b := tx.Bucket([]byte(blocksBucket))
 
         if b == nil {
-            cbtx := CreateCoinBaseTX(address, genesisCoinBaseData)
-            genesis := CreateGenesisBlock(cbtx)
             b, err := tx.CreateBucket([]byte(blocksBucket))
             if nil != err {
                 panic(err)
             }
             err = b.Put(genesis.Hash, genesis.Serialize())
+            if nil != err {
+                panic(err)
+            }
             err = b.Put([]byte("l"), genesis.Hash)
+            if nil != err {
+                panic(err)
+            }
+
             tip = genesis.Hash
         } else {
             tip = b.Get([]byte("l"))
@@ -83,6 +98,35 @@ func CreateBlockChain(address string) *BlockChain {
 
         return nil
     })
+
+    bc := BlockChain{tip, db}
+
+    return &bc
+}
+
+// 创建区块链，即有创世块的链， creates a new Blockchain with genesis Block
+func NewBlockChain(nodeID string) *BlockChain {
+    dbFile := fmt.Sprintf(dbFile, nodeID)
+    if dbExists(dbFile) == false {
+        fmt.Println("No existing blockchain found. Create one first.")
+        os.Exit(1)
+    }
+
+    var tip []byte
+    db, err := bolt.Open(dbFile, 0600, nil)
+    if err != nil {
+        panic(err)
+    }
+
+    err = db.Update(func(tx *bolt.Tx) error {
+        b := tx.Bucket([]byte(blocksBucket))
+        tip = b.Get([]byte("l"))
+
+        return nil
+    })
+    if err != nil {
+        panic(err)
+    }
 
     bc := BlockChain{tip, db}
 
@@ -338,4 +382,17 @@ func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey)
     }
 
     tx.Sign(privKey, prevTXs)
+}
+
+func dbExists(dbFile string) bool {
+    if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+        return false
+    }
+
+    return true
+}
+
+func (this *BlockChain) FindUTXO() map[string]TXOutputs {
+    utxo := make(map[string]TXOutputs)
+    return utxo
 }

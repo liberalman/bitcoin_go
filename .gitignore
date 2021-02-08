@@ -17,3 +17,4 @@
 .idea/
 *.db
 *.dat
+*.db.lock

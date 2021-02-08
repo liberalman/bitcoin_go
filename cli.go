@@ -2,12 +2,11 @@
 // @Description 解析输入参数，完成创建链，添加块，查看块等操作
 // @Author shouchao.zheng 2021-01-24
 // @Update shouchao.zheng 2021-01-24
-package main
+package bitcoin_go
 
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 )
@@ -28,7 +27,7 @@ func (this *CLI) Run() {
 		os.Exit(1)
 	}
 
-	//getBalanceCmd := flag.NewFlagSet("get_balance", flag.ExitOnError)
+	getBalanceCmd := flag.NewFlagSet("get_balance", flag.ExitOnError)
 	//createBlockChainCmd := flag.NewFlagSet("create_block_chain", flag.ExitOnError)
 	addBlockCmd := flag.NewFlagSet("add_block", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("print_chain", flag.ExitOnError)
@@ -36,7 +35,7 @@ func (this *CLI) Run() {
 	createBlockChainCmd := flag.NewFlagSet("create_block_chain", flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("create_wallet", flag.ExitOnError)
 
-	//getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
+	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
 	addBlockData := addBlockCmd.String("data", "", "Block data")
 	sendFrom := sendCmd.String("from", "", "Source wallet address")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
@@ -46,6 +45,11 @@ func (this *CLI) Run() {
 		"The address to send genesis block reward to")
 
 	switch os.Args[1] {
+	case "get_balance":
+		err := getBalanceCmd.Parse(os.Args[2:])
+		if err != nil {
+			panic(err)
+		}
 	case "create_block_chain":
 		err := createBlockChainCmd.Parse(os.Args[2:])
 		if nil != err {
@@ -54,7 +58,7 @@ func (this *CLI) Run() {
 	case "create_wallet":
 		err := createWalletCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			panic(err)
 		}
 	case "add_block":
 		err = addBlockCmd.Parse(os.Args[2:])
@@ -105,18 +109,27 @@ func (this *CLI) Run() {
 	if createWalletCmd.Parsed() {
 		this.createWallet(nodeID)
 	}
+
+	if getBalanceCmd.Parsed() {
+		if *getBalanceAddress == "" {
+			getBalanceCmd.Usage()
+			os.Exit(1)
+		}
+		this.getBalance(*getBalanceAddress, nodeID)
+	}
+
 }
 
 func (this *CLI) printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  createblockchain -address ADDRESS - Create a blockchain and send genesis block reward to ADDRESS")
-	fmt.Println("  createwallet - Generates a new key-pair and saves it into the wallet file")
-	fmt.Println("  getbalance -address ADDRESS - Get balance of ADDRESS")
-	fmt.Println("  listaddresses - Lists all addresses from the wallet file")
-	fmt.Println("  printchain - Print all the blocks of the blockchain")
-	fmt.Println("  reindexutxo - Rebuilds the UTXO set")
+	fmt.Println("  create_block_chain -address ADDRESS - Create a blockchain and send genesis block reward to ADDRESS")
+	fmt.Println("  create_wallet - Generates a new key-pair and saves it into the wallet file")
+	fmt.Println("  get_balance -address ADDRESS - Get balance of ADDRESS")
+	fmt.Println("  list_addresses - Lists all addresses from the wallet file")
+	fmt.Println("  print_chain - Print all the blocks of the blockchain")
+	fmt.Println("  reindex_utxo - Rebuilds the UTXO set")
 	fmt.Println("  send -from FROM -to TO -amount AMOUNT -mine - Send AMOUNT of coins from FROM address to TO. Mine on the same node, when -mine is set.")
-	fmt.Println("  startnode -miner ADDRESS - Start a node with ID specified in NODE_ID env. var. -miner enables mining")
+	fmt.Println("  start_node -miner ADDRESS - Start a node with ID specified in NODE_ID env. var. -miner enables mining")
 }
 
 func (this *CLI) validateArgs() {
@@ -203,4 +216,25 @@ func (this *CLI) createBlockChain(address, nodeID string) {
 	set.ReIndex()
 
 	fmt.Println("Done!")
+}
+
+func (this *CLI) getBalance(address, nodeID string) {
+	if !ValidateAddress(address) {
+		panic("ERROR: Address is not valid")
+	}
+
+	blockChain := NewBlockChain(nodeID)
+	set := UTXOSet{blockChain}
+	defer blockChain.db.Close()
+
+	balance := 0
+	pubKeyHash := Base58Decode([]byte(address))
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash) - 4]
+	utxos := set.FindUTXO(pubKeyHash)
+
+	for _, out := range utxos {
+		balance += out.Value
+	}
+
+	fmt.Printf("Balance of '%s': %d\\n", address, balance)
 }

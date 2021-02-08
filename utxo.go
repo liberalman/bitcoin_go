@@ -1,4 +1,4 @@
-package main
+package bitcoin_go
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/boltdb/bolt"
-	"log"
 )
 
 const subsidy = 10
@@ -84,8 +83,15 @@ func CreateCoinBaseTX(to, data string) *Transaction {
 		data = fmt.Sprintf("Reward to '%s'", to)
 	}
 
-	txin := TXInput{[]byte{}, -1, data}
-	txout := TXOutput{subsidy, to}
+	txin := TXInput{
+		Txid: []byte{},
+		Vout: -1,
+		Signature: []byte{},
+		PubKey: []byte{},
+	}
+	txout := TXOutput{
+		Value: subsidy,
+		PubKeyHash: []byte{}}
 	tx := Transaction{nil, []TXInput{txin}, []TXOutput{txout}}
 	tx.SetID()
 
@@ -94,12 +100,14 @@ func CreateCoinBaseTX(to, data string) *Transaction {
 
 // 输入解锁
 func (this *TXInput) CanUnlockOutputWith(unlockingData string) bool {
-	return this.ScriptSig == unlockingData
+	//return this.ScriptSig == unlockingData
+	return false
 }
 
 // 输出解锁
 func (this *TXOutput) CanBeUnlockedWith(unlockingData string) bool {
-	return this.ScriptPubKey == unlockingData
+	//return this.PubKeyHash == unlockingData
+	return false
 }
 
 // IsCoinbase checks whether the transaction is coinbase
@@ -244,7 +252,7 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 
 	for _, vin := range tx.Vin {
 		if prevTXs[hex.EncodeToString(vin.Txid)].ID == nil {
-			log.Panic("ERROR: Previous transaction is not correct")
+			panic("ERROR: Previous transaction is not correct")
 		}
 	}
 
@@ -259,7 +267,7 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 
 		r, s, err := ecdsa.Sign(rand.Reader, &privKey, []byte(dataToSign))
 		if err != nil {
-			log.Panic(err)
+			panic(err)
 		}
 		signature := append(r.Bytes(), s.Bytes()...)
 
@@ -302,4 +310,64 @@ func DeserializeOutputs(data []byte) TXOutputs {
 	}
 
 	return outputs
+}
+
+// rebuilds the UTXO set
+func (this *UTXOSet) ReIndex() {
+	db := this.BlockChain.db
+	//bucketName := []byte(utxoBucket)
+
+	err := db.Update(func(tx *bolt.Tx) error {
+		return nil
+	})
+	if nil != err {
+		panic(err)
+	}
+
+	//utxo := this.BlockChain.FindUTXO()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		return nil
+	})
+}
+
+// finds UTXO for a public key hash
+func (this *UTXOSet) FindUTXO(pubKeyHash []byte) []TXOutput {
+	var utxos []TXOutput
+	db := this.BlockChain.db
+
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(utxoBucket))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			outs := DeserializeOutputs(v)
+
+			for _, out := range outs.Outputs {
+				if out.IsLockedWithKey(pubKeyHash) {
+					utxos = append(utxos, out)
+				}
+			}
+		}
+
+		return nil
+	})
+	if nil != err {
+		panic(err)
+	}
+
+	return utxos
+}
+
+// updates the UTXO set with transactions from the Block
+// The Block is considered to be the tip of a blockchain
+func (this *UTXOSet) Update(block *Block) {
+	db := this.BlockChain.db
+
+	err := db.Update(func(tx *bolt.Tx) error {
+		return nil
+	})
+	if nil != err {
+		panic(err)
+	}
 }
