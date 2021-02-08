@@ -1,7 +1,7 @@
 package test
 
 import (
-	"bitcoin_go/src"
+	. "bitcoin_go/src"
 	"encoding/hex"
 	"strings"
 	"testing"
@@ -18,10 +18,10 @@ func TestBase58(t *testing.T) {
         t.Fatal(err)
     }
 
-    encoded := src.Base58Encode(hash)
+    encoded := Base58Encode(hash)
     assert.Equal(t, "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM", string(encoded))
 
-    decoded := src.Base58Decode([]byte("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"))
+    decoded := Base58Decode([]byte("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"))
     assert.Equal(t, strings.ToLower("00010966776006953D5567439E5E39F86A0D273BEED61967F6"), hex.EncodeToString(decoded))
 }
 
