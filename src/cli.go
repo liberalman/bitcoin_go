@@ -2,7 +2,7 @@
 // @Description 解析输入参数，完成创建链，添加块，查看块等操作
 // @Author shouchao.zheng 2021-01-24
 // @Update shouchao.zheng 2021-01-24
-package bitcoin_go
+package src
 
 import (
 	"flag"

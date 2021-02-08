@@ -1,4 +1,4 @@
-package bitcoin_go
+package src
 
 import (
 	"bytes"
@@ -90,7 +90,7 @@ func CreateCoinBaseTX(to, data string) *Transaction {
 		PubKey: []byte{},
 	}
 	txout := TXOutput{
-		Value: subsidy,
+		Value:      subsidy,
 		PubKeyHash: []byte{}}
 	tx := Transaction{nil, []TXInput{txin}, []TXOutput{txout}}
 	tx.SetID()

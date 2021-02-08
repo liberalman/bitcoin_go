@@ -1,4 +1,4 @@
-package bitcoin_go
+package src
 
 import (
     "crypto/ecdsa"

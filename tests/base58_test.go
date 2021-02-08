@@ -1,14 +1,14 @@
 package test
 
 import (
-    . "bitcoin_go"
-    "encoding/hex"
-    "strings"
-    "testing"
+	"bitcoin_go/src"
+	"encoding/hex"
+	"strings"
+	"testing"
 
-    "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 
-    // item package
+	// item package
 )
 
 func TestBase58(t *testing.T) {
@@ -18,10 +18,10 @@ func TestBase58(t *testing.T) {
         t.Fatal(err)
     }
 
-    encoded := Base58Encode(hash)
+    encoded := src.Base58Encode(hash)
     assert.Equal(t, "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM", string(encoded))
 
-    decoded := Base58Decode([]byte("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"))
+    decoded := src.Base58Decode([]byte("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"))
     assert.Equal(t, strings.ToLower("00010966776006953D5567439E5E39F86A0D273BEED61967F6"), hex.EncodeToString(decoded))
 }
 

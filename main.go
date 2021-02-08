@@ -1,4 +1,8 @@
-package bitcoin_go
+package main
+
+import (
+	. "bitcoin_go/src"
+)
 
 func test() {
     blockChain := CreateBlockChain("1DAhvHAataamMB7yg2hyFLeA7LE8LAuo88", "1234")
@@ -13,12 +17,12 @@ func test() {
         pow := NewProofOfWork(block)
         fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
         fmt.Println()
-    }*/
+    }
 
     defer blockChain.db.Close()
 
     cli := CLI{blockChain}
-    cli.Run()
+    cli.Run()*/
 }
 
 func main() {

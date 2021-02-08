@@ -1,7 +1,7 @@
-package bitcoin_go
+package src
 
 import (
-    "crypto/sha256"
+	"crypto/sha256"
 )
 
 type MerkleTree struct {
