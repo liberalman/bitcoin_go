@@ -299,7 +299,20 @@ type TXOutputs struct {
 	Outputs []TXOutput
 }
 
-// DeserializeOutputs deserializes TXOutputs
+// serializes TXOutputs
+func (this *TXOutputs) Serialize() []byte {
+	var buff bytes.Buffer
+
+	enc := gob.NewEncoder(&buff)
+	err := enc.Encode(this)
+	if nil != err {
+		panic(err)
+	}
+
+	return buff.Bytes()
+}
+
+// deserializes TXOutputs
 func DeserializeOutputs(data []byte) TXOutputs {
 	var outputs TXOutputs
 
@@ -315,18 +328,40 @@ func DeserializeOutputs(data []byte) TXOutputs {
 // rebuilds the UTXO set
 func (this *UTXOSet) ReIndex() {
 	db := this.BlockChain.db
-	//bucketName := []byte(utxoBucket)
+	bucketName := []byte(utxoBucket)
 
 	err := db.Update(func(tx *bolt.Tx) error {
+		if err := tx.DeleteBucket(bucketName); nil != err && err != bolt.ErrBucketNotFound {
+			panic(err)
+		}
+
+		if _, err := tx.CreateBucket(bucketName); nil != err  {
+			panic(err)
+		}
+
 		return nil
 	})
 	if nil != err {
 		panic(err)
 	}
 
-	//utxo := this.BlockChain.FindUTXO()
+	utxo := this.BlockChain.FindUTXO()
 
 	err = db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketName)
+
+		for txID, outs := range utxo {
+			key, err := hex.DecodeString(txID)
+			if nil != err {
+				panic(err)
+			}
+
+			err = b.Put(key, outs.Serialize())
+			if nil != err {
+				panic(err)
+			}
+		}
+
 		return nil
 	})
 }
@@ -369,5 +404,38 @@ func (this *UTXOSet) Update(block *Block) {
 	})
 	if nil != err {
 		panic(err)
+	}
+}
+
+// CountTransactions returns the number of transactions in the UTXO set
+func (this *UTXOSet) CountTransactions() int {
+	db := this.BlockChain.db
+	counter := 0
+
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(utxoBucket))
+		c := b.Cursor()
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			counter++
+		}
+
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return counter
+}
+
+func (this *Transaction) PrintTransaction() {
+	fmt.Printf("|----- transaction %v -----|\n", hex.EncodeToString(this.ID))
+	for _, in := range this.Vin {
+		fmt.Printf("|Vin | PubKey: %s, Signature: %s, Txid: %s|\n", hex.EncodeToString(in.PubKey),
+			hex.EncodeToString(in.Signature), hex.EncodeToString(in.Txid))
+	}
+	for _, out := range this.Vout {
+		fmt.Printf("|Vout| Value: %d, PubKeyHash: %s|\n", out.Value, hex.EncodeToString(out.PubKeyHash))
 	}
 }

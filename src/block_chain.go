@@ -108,7 +108,7 @@ func CreateBlockChain(address, nodeID string) *BlockChain {
 func NewBlockChain(nodeID string) *BlockChain {
     dbFile := fmt.Sprintf(dbFile, nodeID)
     if dbExists(dbFile) == false {
-        fmt.Println("No existing blockchain found. Create one first.")
+        fmt.Println("No existing block chain found. Create one first.")
         os.Exit(1)
     }
 

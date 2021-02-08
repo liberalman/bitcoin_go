@@ -84,3 +84,13 @@ func (this Wallets) GetWallet(address string) Wallet {
     return *this.Wallets[address]
 }
 
+// returns an array of addresses stored in the wallet file
+func (this Wallets) GetAddresses() []string {
+    var addresses []string
+
+    for address := range this.Wallets {
+        addresses = append(addresses, address)
+    }
+
+    return addresses
+}

@@ -12,6 +12,7 @@ type Block struct {
     PrevBlockHash []byte         // 前一个块的哈希，即父哈希，256-bit，32 bytes
     Hash          []byte         // 当前块的哈希，256-bit，32 bytes
     Nonce         int
+    Height        int
 }
 
 // 生成一个新的块
