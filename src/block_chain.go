@@ -221,7 +221,7 @@ func (this *BlockChainIterator) Next() *Block {
     if err := this.db.View(func(tx *bolt.Tx) error {
         b := tx.Bucket([]byte(blocksBucket))
         encodedBlock := b.Get(this.currentHash)
-        block = DeSerialize(encodedBlock)
+        block = DeserializeBlock(encodedBlock)
 
         return nil
     }); nil != err {
@@ -406,7 +406,7 @@ func (this *BlockChain) GetBestHeight() int {
         b := tx.Bucket([]byte(blocksBucket))
         lastHash := b.Get([]byte("l"))
         blockData := b.Get(lastHash)
-        lastBlock = *DeSerialize(blockData)
+        lastBlock = *DeserializeBlock(blockData)
 
         return nil
     })

@@ -18,7 +18,7 @@ const utxoBucket = "chainstate"
 type TXOutput struct {
 	Value int // 币值
 	//ScriptPubKey string // 锁定脚本
-	PubKeyHash []byte
+	PubKeyHash []byte // 公钥的哈希值
 }
 
 // 交易输入
@@ -84,10 +84,10 @@ func CreateCoinBaseTX(to, data string) *Transaction {
 	}
 
 	txin := TXInput{
-		Txid: []byte{},
-		Vout: -1,
+		Txid:      []byte{},
+		Vout:      -1,
 		Signature: []byte{},
-		PubKey: []byte{},
+		PubKey:    []byte{},
 	}
 	txout := TXOutput{
 		Value:      subsidy,
@@ -159,7 +159,6 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	return true
 }
 
-
 func (this *Transaction) SetID() {
 	this.ID = this.Hash()
 }
@@ -171,8 +170,9 @@ func (this *TXInput) UsesKey(pubKeyHash []byte) bool {
 }
 
 func (this *TXOutput) Lock(address []byte) {
-	pubKeyHash := Base58Decode(address)
-	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+	pubKeyHash := Base58Decode(address) // 先解码
+	// 去掉第1个字节（版本号）和最后4个字节（校验值），取中间的即公钥的哈希值
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-addressCheckSumLen]
 	this.PubKeyHash = pubKeyHash
 }
 
@@ -335,7 +335,7 @@ func (this *UTXOSet) ReIndex() {
 			panic(err)
 		}
 
-		if _, err := tx.CreateBucket(bucketName); nil != err  {
+		if _, err := tx.CreateBucket(bucketName); nil != err {
 			panic(err)
 		}
 
