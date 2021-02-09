@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	from = "13ETDxHQCzmgc7TfpC76eKrKNY9SmacSsj"
-	to = "1wjuf2kvUSd6mraLcHa6s5BnS5VvJDYDh"
+	from = "18vhdHeZ2XJLSSd861p4XxFVYwaLeNcGP2"
+	to = "1LKMabNYff5xKot4FRnmMnxSG6C1SHjN96"
 	amount = 1
 	mineNow = true
 )

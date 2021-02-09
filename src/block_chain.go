@@ -7,7 +7,6 @@ import (
     "errors"
     "fmt"
     "github.com/boltdb/bolt"
-    "log"
     "os"
 )
 
@@ -352,6 +351,7 @@ func (this *BlockChain) VerifyTransaction(tx *Transaction) bool {
 func (this *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
     bci := this.Iterator()
 
+    // 迭代所有区块
     for {
         block := bci.Next()
 
@@ -361,7 +361,7 @@ func (this *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
             }
         }
 
-        if len(block.PrevBlockHash) == 0 {
+        if len(block.PrevBlockHash) == 0 { // 到链尾部了
             break
         }
     }
@@ -370,13 +370,13 @@ func (this *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
 }
 
 // SignTransaction signs inputs of a Transaction
-func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+func (this *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
     prevTXs := make(map[string]Transaction)
 
     for _, vin := range tx.Vin {
-        prevTX, err := bc.FindTransaction(vin.Txid)
+        prevTX, err := this.FindTransaction(vin.Txid)
         if err != nil {
-            log.Panic(err)
+            panic(err)
         }
         prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
     }
@@ -384,16 +384,40 @@ func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey)
     tx.Sign(privKey, prevTXs)
 }
 
-func dbExists(dbFile string) bool {
-    if _, err := os.Stat(dbFile); os.IsNotExist(err) {
-        return false
-    }
-
-    return true
-}
-
+// finds all unspent transaction outputs and returns transactions with spent outputs removed
 func (this *BlockChain) FindUTXO() map[string]TXOutputs {
     utxo := make(map[string]TXOutputs)
+    spentTXOs := make(map[string][]int)
+    bci := this.Iterator()
+
+    for {
+        block := bci.Next()
+
+        for _, tx := range block.Transcations {
+            txID := hex.EncodeToString(tx.ID)
+
+            Outputs:
+                for outIdx, out := range tx.Vout {
+                    // Was the output spent?
+                    if spentTXOs[txID] != nil {
+                        for _, spentOutIdx := range spentTXOs[txID] {
+                            if spentOutIdx == outIdx {
+                                continue Outputs
+                            }
+                        }
+                    }
+
+                    outs := utxo[txID]
+                    outs.Outputs = append(outs.Outputs, out)
+                    utxo[txID] = outs
+                }
+        }
+
+        if len(block.PrevBlockHash) == 0 {
+            break
+        }
+    }
+
     return utxo
 }
 

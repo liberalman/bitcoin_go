@@ -1,28 +1,14 @@
 package src
 
 import (
-	"bytes"
-	"encoding/gob"
+    "os"
 )
 
-func (this *Block) Serialize() []byte {
-    var result bytes.Buffer
-    encoder := gob.NewEncoder(&result)
-
-    if err := encoder.Encode(this); nil != err {
-        panic(err)
+func dbExists(dbFile string) bool {
+    if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+        return false
     }
 
-    return result.Bytes()
+    return true
 }
 
-func DeserializeBlock(data []byte) *Block {
-    var block Block
-
-    decoder := gob.NewDecoder(bytes.NewReader(data))
-    if err := decoder.Decode(&block); nil != err {
-        panic(err)
-    }
-
-    return &block
-}
