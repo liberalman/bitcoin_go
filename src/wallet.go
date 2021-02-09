@@ -8,7 +8,7 @@ import (
     "golang.org/x/crypto/ripemd160"
 )
 
-const version = byte(0x00)
+const version1 = byte(0x00)
 const addressChecksumLen = 4
 
 type Wallet struct {
@@ -37,7 +37,7 @@ func newKeyPair() (ecdsa.PrivateKey, []byte) {
 func (this *Wallet) GetAddress() []byte {
     pubKeyHash := HashPubKey(this.PublicKey)
 
-    versionedPayload := append([]byte{version}, pubKeyHash...)
+    versionedPayload := append([]byte{version1}, pubKeyHash...)
     checksum := checkSum(versionedPayload)
 
     fullPayload := append(versionedPayload, checksum...)

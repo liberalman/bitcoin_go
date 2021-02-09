@@ -18,3 +18,5 @@
 *.db
 *.dat
 *.db.lock
+bitcoin_go
+

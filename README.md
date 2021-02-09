@@ -22,8 +22,8 @@ $ ./bitcoin_go
 
 unit test
 ```sh
-$ go test -v ./tests/                  # test all cases
-$ go test -v ./tests/ -bench="Base58$" # test Base58
+$ go test -v ./tests/                   # test all cases
+$ go test -v ./tests/ -test.run Base58 # test function TestBase58
 ```
 
 

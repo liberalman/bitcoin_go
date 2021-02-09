@@ -396,3 +396,23 @@ func (this *BlockChain) FindUTXO() map[string]TXOutputs {
     utxo := make(map[string]TXOutputs)
     return utxo
 }
+
+// returns the height of the latest block
+func (this *BlockChain) GetBestHeight() int {
+    var lastBlock Block
+
+    // 取出最后一个块
+    err := this.db.View(func(tx *bolt.Tx) error {
+        b := tx.Bucket([]byte(blocksBucket))
+        lastHash := b.Get([]byte("l"))
+        blockData := b.Get(lastHash)
+        lastBlock = *DeSerialize(blockData)
+
+        return nil
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    return lastBlock.Height
+}
