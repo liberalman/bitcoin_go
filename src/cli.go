@@ -36,6 +36,7 @@ func (this *CLI) Run() {
 	createWalletCmd := flag.NewFlagSet("create_wallet", flag.ExitOnError)
 	listAddressesCmd := flag.NewFlagSet("list_addresses", flag.ExitOnError)
 	reindexUTXOCmd := flag.NewFlagSet("reindex_utxo", flag.ExitOnError)
+    startNodeCmd := flag.NewFlagSet("startnode", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
 	addBlockData := addBlockCmd.String("data", "", "Block data")
@@ -45,6 +46,7 @@ func (this *CLI) Run() {
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 	createBlockChainAddress := createBlockChainCmd.String("address", "",
 		"The address to send genesis block reward to")
+    startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
 
 	switch os.Args[1] {
 	case "create_wallet":
@@ -81,6 +83,11 @@ func (this *CLI) Run() {
 		if err != nil {
 			log.Panic(err)
 		}
+    case "start_node":
+        err := startNodeCmd.Parse(os.Args[2:])
+        if err != nil {
+            panic(err)
+        }
 	default:
 		this.printUsage()
 		os.Exit(1)
@@ -137,6 +144,15 @@ func (this *CLI) Run() {
 	if reindexUTXOCmd.Parsed() {
 		this.ReindexUTXO(nodeID)
 	}
+
+    if startNodeCmd.Parsed() {
+        nodeID := os.Getenv("NODE_ID")
+        if nodeID == "" {
+            startNodeCmd.Usage()
+            os.Exit(1)
+        }
+        this.startNode(nodeID, *startNodeMiner)
+    }
 }
 
 func (this *CLI) printUsage() {
@@ -307,3 +323,16 @@ func (this *CLI) ReindexUTXO(nodeID string) {
 	count := set.CountTransactions()
 	fmt.Printf("Done! There are %d transactions in the UTXO set.\n", count)
 }
+
+func (this *CLI) startNode(nodeID, minerAddress string) {
+    fmt.Printf("Starting node %s\n", nodeID)
+    if len(minerAddress) > 0 {
+        if ValidateAddress(minerAddress) {
+            fmt.Println("Mining is on. Address to receive rewards: ", minerAddress)
+        } else {
+            panic("Wrong miner address!")
+        }
+    }
+    StartServer(nodeID, minerAddress)
+}
+

@@ -20,6 +20,10 @@ const (
     nodeVersion = 1
 )
 
+type addr struct {
+    AddrList []string
+}
+
 type version struct {
     Version int
     BestHeight int
@@ -113,6 +117,8 @@ func handleConnection(conn net.Conn, blockChain *BlockChain) {
     fmt.Printf("Received %s command\n", command)
 
     switch command {
+    case "addr":
+        handleAddr(request)
     case "version":
         handleVersion(request, blockChain)
     default:
@@ -183,5 +189,29 @@ func nodeIsKnown(address string) bool {
     }
 
     return false
+}
+
+func handleAddr(request []byte) {
+    var (
+        buff bytes.Buffer
+        payload addr
+    )
+
+    buff.Write(request[commandLength:])
+    dec := gob.NewDecoder(&buff)
+    err := dec.Decode(&payload)
+    if err != nil {
+        panic(err)
+    }
+
+    knownNodes = append(knownNodes, payload.AddrList...)
+    fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
+    requestBlocks()
+}
+
+func requestBlocks() {
+    for _, node := range knownNodes {
+        sendGetBlocks(node)
+    }
 }
 
